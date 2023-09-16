@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: flightcont
-        image: siddhardan/flight:latest
+        image: image_name
         ports:
         - containerPort: 8080
 ---
