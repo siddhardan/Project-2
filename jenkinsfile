@@ -47,14 +47,10 @@ pipeline {
             steps {
                 script {
                     def eksClusterName = 'cluster-1'
-                    def clusterExists = bat(script: "aws eks describe-cluster --name ${eksClusterName}", returnStatus: true) == 0
-                    if (!clusterExists) {
-                        bat "aws eks update-kubeconfig --name ${eksClusterName} --region ap-south-1"
-                        bat "kubectl apply -f ${app_deploy_manifest}"
-                    } else {
-                        bat "kubectl apply -f ${app_deploy_manifest}"
-                    } 
-                    }
+                    def buildNumber = currentBuild.number
+                    def imageName = "${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    bat "kubectl apply -f ${app_deploy_manifest}"
+                    bat "kubectl set image deployment/flightdeployment ${imageName} --record"     
                 }
             }
         }
