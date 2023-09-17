@@ -24,10 +24,11 @@ kind: Service
 metadata:
   name: flightsvc
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: flight
   ports:
   - port: 80
     targetPort: 8080
+    nodePort: 30000
 ...
