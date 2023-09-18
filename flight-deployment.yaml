@@ -38,11 +38,6 @@ spec:
     app: flight
     env: prod
   ports:
-  - port: 80
+  - port: 8080
     targetPort: 8080
     nodePort: 30000
-<<<<<<< HEAD
-...
-=======
-...
->>>>>>> ca0f008afed05fa70a88a6278632b8793db2d84b
