@@ -1,4 +1,4 @@
-# Siddhu-Project-2
+# Project-2
 
 Creating the CI/CD Pipeline using the tools GitHub, maven, Docker, Kubernetes
 
