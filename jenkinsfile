@@ -54,13 +54,13 @@ pipeline {
         stage('Deploying the application') {
             steps {
                 script {
-                        def runningPods = bat(script: "kubectl get deploy -l app=flight,env=prod, returnstatus: true")
-                        if (runningPods != 0) {
-                            bat "kubectl set image deployment/flightdeployment flightcont=${IMAGE_NAME}"
-                            bat "kubectl rollout status deployment flightdeployment"
-                        } else {
-                            bat "kubectl apply -f flight-deployment.yaml"
-                        }
+                    def runningDeployment = bat(script: "kubectl get deploy flightdeployment", returnStatus: true)
+                    if (runningDeployment == 0) {
+                        bat "kubectl apply -f flight-deployment.yaml"
+                    } else {
+                        bat "kubectl set image deployment/flightdeployment flightcont=${IMAGE_NAME}"
+                        bat "kubectl rollout status deployment flightdeployment"    
+                    }
                 }
             }
         }
