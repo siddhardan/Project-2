@@ -4,15 +4,17 @@ pipeline {
         maven "maven"
     }
     environment {
-        TAG_NAME = "siddhardan"
-        IMAGE_NAME = "flight"
+        REPOSITORY_USER_NAME = "siddhardan"
+        APP_NAME = "flight"
+        IMAGE_NAME = "${REPOSITORY_USER_NAME}/${APP_NAME}:${BUILD_NUMBER}"
+        CONTAINER_NAME = "${APP_NAME}"
         PORT = "8000"
         EXPOSED_PORT = "8080"
     }
     stages {
         stage('Checkout from SCM') {
             steps {
-                git branch: 'main', credentialsId: 'Project-1-SCM', url: 'https://github.com/siddhardan/Siddhu-Project-1.git'
+                git branch: 'master', credentialsId: 'Project-1-SCM', url: 'https://github.com/siddhardan/Project-2.git'
             }
         }
         stage ('Maven Package Build') {
@@ -24,8 +26,9 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        bat "docker build -t ${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER} ."
-                        bat "docker push ${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                        bat "docker build -t ${IMAGE_NAME} ."
+                        bat "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        bat "docker push ${IMAGE_NAME}"
                     }
                 }    
             }
@@ -33,24 +36,31 @@ pipeline {
         /*stage('Deploy Docker Container') {
             steps {
                 script {
-                    def runningContainers = bat(returnStatus: true, script: "docker ps -a -f label=${IMAGE_NAME}=1.0")
+                    def runningContainers = bat(returnStatus: true, script: "docker ps -a -f label=module=flight")
                     if (runningContainers >=0) {
-                        bat "docker rm -f ${IMAGE_NAME}"
-                        bat "docker run -itd -p ${PORT}:${EXPOSED_PORT} --label ${IMAGE_NAME}=1.0 --name ${IMAGE_NAME} ${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                        bat "docker rm -f ${CONTAINER_NAME}"
+                        bat "docker run -itd -p ${PORT}:${EXPOSED_PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
                     } else {
-                        bat "docker run -itd -p ${PORT}:${EXPOSED_PORT} --label ${IMAGE_NAME}=1.0 --name ${IMAGE_NAME} ${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                        bat "docker run -itd -p ${PORT}:${EXPOSED_PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
                     }
                 }
+            }
+        }
+        stage('Provide latest image version to mainfest') {
+            steps {
+                bat "main.py C:/Users/91960/.jenkins/workspace/Project-2/flight-deployment.yaml --find image_name --replace ${IMAGE_NAME}"
             }
         }*/
         stage('Deploying the application') {
             steps {
                 script {
-                    def eksClusterName = 'cluster-1'
-                    def buildNumber = currentBuild.number
-                    def imageName = "${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
-                    bat "kubectl apply -f ${app_deploy_manifest}"
-                    bat "kubectl set image deployment/flightdeployment ${imageName} --record"     
+                        def runningPods = bat(script: "kubectl get deploy -l app=flight,env=prod, returnstatus: true")
+                        if (runningPods != 0) {
+                            bat "kubectl set image deployment/flightdeployment flightcont=${IMAGE_NAME}"
+                            bat "kubectl rollout status deployment flightdeployment"
+                        } else {
+                            bat "kubectl apply -f flight-deployment.yaml"
+                        }
                 }
             }
         }
@@ -58,8 +68,8 @@ pipeline {
     post {
         success {
             script {
-                bat "docker rmi -f ${TAG_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
-                bat "docker image prune -af --filter label=module=flight"
+                bat "docker rmi -f ${IMAGE_NAME}"
+                //bat "docker image prune -af --filter label=module=flight"
             }
         }
         always {

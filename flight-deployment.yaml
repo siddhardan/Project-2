@@ -1,17 +1,28 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flightdeployment
+  labels:
+    app: flight
+    tier: app-server
+    env: prod 
 spec:
-  replicas: 1
+  strategy:
+    type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+  replicas: 3
   selector:
     matchLabels:
       app: flight
+      env: prod
   template:
     metadata:
       name: flightpod
       labels:
         app: flight
+        env: prod
     spec:
       containers:
       - name: flightcont
@@ -24,10 +35,12 @@ kind: Service
 metadata:
   name: flightsvc
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: flight
+    env: prod
   ports:
   - port: 80
     targetPort: 8080
+    nodePort: 30000
 ...
